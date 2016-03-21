@@ -1,7 +1,7 @@
 url                   = require 'url'
 {CompositeDisposable} = require 'atom'
 
-HtmlPreviewView       = require './atom-html-preview-view'
+ArtPreviewView       = require './flying-art-preview-view'
 
 module.exports =
   config:
@@ -33,11 +33,11 @@ module.exports =
 
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
       @subscriptions.add editor.onDidSave =>
-        if htmlPreviewView? and htmlPreviewView instanceof HtmlPreviewView
+        if htmlPreviewView? and htmlPreviewView instanceof ArtPreviewView
           htmlPreviewView.renderHTML()
 
     # Register command that toggles this view
-    @subscriptions.add atom.commands.add 'atom-workspace', 'atom-html-preview:toggle': => @toggle()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'flying-art-preview:toggle': => @toggle()
 
     atom.workspace.addOpener (uriToOpen) ->
       try
@@ -45,7 +45,7 @@ module.exports =
       catch error
         return
 
-      return unless protocol is 'html-preview:'
+      return unless protocol is 'flying-art-preview:'
 
       try
         pathname = decodeURI(pathname) if pathname
@@ -53,9 +53,9 @@ module.exports =
         return
 
       if host is 'editor'
-        @htmlPreviewView = new HtmlPreviewView(editorId: pathname.substring(1))
+        @htmlPreviewView = new ArtPreviewView(editorId: pathname.substring(1))
       else
-        @htmlPreviewView = new HtmlPreviewView(filePath: pathname)
+        @htmlPreviewView = new ArtPreviewView(filePath: pathname)
 
       return htmlPreviewView
 
@@ -63,7 +63,7 @@ module.exports =
     editor = atom.workspace.getActiveTextEditor()
     return unless editor?
 
-    uri = "html-preview://editor/#{editor.id}"
+    uri = "flying-art-preview://editor/#{editor.id}"
 
     previewPane = atom.workspace.paneForURI(uri)
     if previewPane
@@ -72,7 +72,7 @@ module.exports =
 
     previousActivePane = atom.workspace.getActivePane()
     atom.workspace.open(uri, split: 'right', searchAllPanes: true).done (htmlPreviewView) ->
-      if htmlPreviewView instanceof HtmlPreviewView
+      if htmlPreviewView instanceof ArtPreviewView
         htmlPreviewView.renderHTML()
         previousActivePane.activate()
 

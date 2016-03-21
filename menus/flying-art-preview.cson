@@ -1,0 +1,24 @@
+'context-menu':
+  'atom-text-editor': [
+    {label: 'Preview HTML', command: 'flying-art-preview:toggle'}
+  ]
+  '.flying-art-preview webview': [
+    {label: 'Cut', command: 'core:cut'}
+    {label: 'Copy', command: 'core:copy'}
+    {label: 'Paste', command: 'core:paste'}
+    {label: 'Print', command: 'flying-art-preview:print'}
+    {label: 'Open Devtools', command: 'flying-art-preview:open-devtools'}
+    {label: 'Inspect', command: 'flying-art-preview:inspect'}
+  ]
+
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'Preview HTML'
+      'submenu': [
+        { 'label': 'Enable Preview', 'command': 'flying-art-preview:toggle' }
+      ]
+    ]
+  }
+]

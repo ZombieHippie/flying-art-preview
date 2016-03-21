@@ -5,7 +5,7 @@ path                  = require 'path'
 os                    = require 'os'
 
 module.exports =
-class AtomHtmlPreviewView extends ScrollView
+class ArtPreviewView extends ScrollView
   atom.deserializers.add(this)
 
   editorSub           : null
@@ -13,10 +13,10 @@ class AtomHtmlPreviewView extends ScrollView
   onDidChangeModified : -> new Disposable()
 
   @deserialize: (state) ->
-    new AtomHtmlPreviewView(state)
+    new ArtPreviewView(state)
 
   @content: ->
-    @div class: 'atom-html-preview native-key-bindings', tabindex: -1, =>
+    @div class: 'flying-art-preview native-key-bindings', tabindex: -1, =>
       style = 'z-index: 2; padding: 2em;'
       @div class: 'show-error', style: style
       @div class: 'show-loading', style: style, "Loading HTML"
@@ -48,7 +48,7 @@ class AtomHtmlPreviewView extends ScrollView
     document.removeEventListener 'mouseup', @onStoppedResizing
 
   serialize: ->
-    deserializer : 'AtomHtmlPreviewView'
+    deserializer : 'ArtPreviewView'
     filePath     : @getPath()
     editorId     : @editorId
 
@@ -96,11 +96,11 @@ class AtomHtmlPreviewView extends ScrollView
       contextMenuClientX = event.clientX
 
     atom.commands.add @element,
-      'atom-html-preview:open-devtools': =>
+      'flying-art-preview:open-devtools': =>
         @webview.openDevTools()
-      'atom-html-preview:inspect': =>
+      'flying-art-preview:inspect': =>
         @webview.inspectElement(contextMenuClientX, contextMenuClientY)
-      'atom-html-preview:print': =>
+      'flying-art-preview:print': =>
         @webview.print()
 
 
@@ -113,7 +113,7 @@ class AtomHtmlPreviewView extends ScrollView
     @editorSub = new CompositeDisposable
 
     if @editor?
-      if atom.config.get("atom-html-preview.triggerOnSave")
+      if atom.config.get("flying-art-preview.triggerOnSave")
         @editorSub.add @editor.onDidSave changeHandler
       else
         @editorSub.add @editor.onDidStopChanging changeHandler
@@ -122,7 +122,7 @@ class AtomHtmlPreviewView extends ScrollView
   renderHTML: ->
     @showLoading()
     if @editor?
-      if not atom.config.get("atom-html-preview.triggerOnSave") && @editor.getPath()?
+      if not atom.config.get("flying-art-preview.triggerOnSave") && @editor.getPath()?
         @save(@renderHTMLCode)
       else
         @renderHTMLCode()
@@ -130,10 +130,10 @@ class AtomHtmlPreviewView extends ScrollView
   save: (callback) ->
     # Temp file path
     outPath = path.resolve path.join(os.tmpdir(), @editor.getTitle() + ".html")
-    out = ""
+    out = "<html><head>"
     fileEnding = @editor.getTitle().split(".").pop()
 
-    if atom.config.get("atom-html-preview.enableMathJax")
+    if atom.config.get("flying-art-preview.enableMathJax")
       out += """
       <script type="text/x-mathjax-config">
       MathJax.Hub.Config({
@@ -146,19 +146,44 @@ class AtomHtmlPreviewView extends ScrollView
       </script>
       """
 
-    if atom.config.get("atom-html-preview.preserveWhiteSpaces") and fileEnding in atom.config.get("atom-html-preview.fileEndings")
+    if atom.config.get("flying-art-preview.preserveWhiteSpaces") and fileEnding in atom.config.get("flying-art-preview.fileEndings")
       # Enclose in <pre> statement to preserve whitespaces
       out += """
       <style type="text/css">
       body { white-space: pre; }
       </style>
       """
-    else
-      # Add base tag; allow relative links to work despite being loaded
-      # as the src of an webview
-      out += "<base href=\"" + @getPath() + "\">"
+
+    # Add base tag; allow relative links to work despite being loaded
+    # as the src of an webview
+    out += "<base href=\"" + @getPath() + "\">"
+    backgroundColor = document.defaultView.getComputedStyle($("atom-text-editor")[0])["background-color"]
+    out += """
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.4.23/p5.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.4.23/addons/p5.dom.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.4.23/addons/p5.sound.js"></script>
+      <style>
+        html, body {
+          overflow: hidden;
+          margin: 0;
+          padding: 0;
+          background:#{backgroundColor};
+          text-align: center;
+        }
+        canvas {
+          transform: translate3d(-50%,-50%,0);
+          left: 50%;
+          top: 50%;
+          position: absolute;
+        }
+      </style>
+    """
+    out += "</head><body>"
+    out += "<script>"
 
     out += @editor.getText()
+
+    out += "</script></body></html>"
 
     @tmpPath = outPath
     fs.writeFile outPath, out, =>
@@ -185,17 +210,17 @@ class AtomHtmlPreviewView extends ScrollView
     catch error
       null
 
-    # @trigger('atom-html-preview:html-changed')
-    atom.commands.dispatch 'atom-html-preview', 'html-changed'
+    # @trigger('flying-art-preview:code-changed')
+    atom.commands.dispatch 'flying-art-preview', 'code-changed'
 
   getTitle: ->
     if @editor?
       "#{@editor.getTitle()} Preview"
     else
-      "HTML Preview"
+      "Canvas Preview"
 
   getURI: ->
-    "html-preview://editor/#{@editorId}"
+    "flying-art-preview://editor/#{@editorId}"
 
   getPath: ->
     if @editor?
@@ -206,7 +231,7 @@ class AtomHtmlPreviewView extends ScrollView
 
     @find('.show-error')
     .html $$$ ->
-      @h2 'Previewing HTML Failed'
+      @h2 'Previewing Canvas Failed'
       @h3 failureMessage if failureMessage?
     .show()
 
